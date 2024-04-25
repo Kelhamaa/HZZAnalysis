@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - rabbit
+
+  operator:
+    image: operator
+    build: 
+      context: ./
+      dockerfile: ./operators/Dockerfile
+    networks: 
+      - rabbit
+    stdin_open: true
+    tty: true
+    depends_on:
+      - rabbitmq
+
+  worker:
+    image: worker
+    build: 
+      context: ./
+      dockerfile: ./workers/Dockerfile
+    networks: 
+      - rabbit
+    stdin_open: true
+    tty: true
+    deploy:
+      replicas: 2
+    depends_on:
+      - rabbitmq     
+
+  output:
+    image: output
+    build:
+      context: ./
+      dockerfile: ./output/Dockerfile
+    volumes: 
+      - .:/app/data
+    networks: 
+      - rabbit
+    stdin_open: true
+    tty: true
+    depends_on:
+      - rabbitmq
+
+networks:
+  rabbit:
+    driver: bridge
